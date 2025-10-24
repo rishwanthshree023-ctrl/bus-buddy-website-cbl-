@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚍 LIVE BUS TRACKING</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<style>
+body { margin:0; padding:0; height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; background: linear-gradient(145deg,#0b1023,#0e1b4f); }
+h1 { font-family:'Orbitron',sans-serif; color:#3ee7ff; text-shadow:0 0 12px rgba(62,231,255,.7); margin:10px 0; text-align:center; }
+#map { width: 100%; height: 90vh; border-radius:16px; border:1px solid rgba(255,255,255,.2); box-shadow:0 15px 40px rgba(0,0,0,.6); }
+</style>
+</head>
+<body>
+
+<h1>🚍 LIVE BUS TRACKING</h1>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCSNc89kJbq45tyB8yG91Ge-NgrsNGuXYs",
+  authDomain: "bus-buddy-website.firebaseapp.com",
+  databaseURL: "https://bus-buddy-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "bus-buddy-website",
+  storageBucket: "bus-buddy-website.firebasestorage.app",
+  messagingSenderId: "160372015537",
+  appId: "1:160372015537:web:bb8758716101f1b6dc3d90",
+  measurementId: "G-V6NP9VG2Q5"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const selectedRoute = localStorage.getItem("selectedRoute");
+if(!selectedRoute){ alert("❌ Route not selected. Login first."); throw "No route"; }
+
+// Initialize map
+const map = L.map('map').setView([13.0827,80.2707],14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+let marker=null;
+let pathCoordinates=[];
+let polyline=L.polyline(pathCoordinates,{color:'lime',weight:4}).addTo(map);
+
+function updateMarker(lat,lng){
+  if(!marker){ marker=L.marker([lat,lng]).addTo(map); map.setView([lat,lng],16); }
+  else marker.setLatLng([lat,lng]);
+  pathCoordinates.push([lat,lng]);
+  polyline.setLatLngs(pathCoordinates);
+}
+
+// Listen driver updates under route
+const driverRef = ref(db, `drivers/${selectedRoute}`);
+onValue(driverRef, snapshot=>{
+  const drivers = snapshot.val();
+  if(!drivers) return;
+  for(const key in drivers){
+    const d = drivers[key];
+    updateMarker(parseFloat(d.lat), parseFloat(d.lng));
+    break; // first driver only
+  }
+});
+</script>
+</body>
+</html>

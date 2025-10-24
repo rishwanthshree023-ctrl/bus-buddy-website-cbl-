@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bus Buddy – User Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg1:#0b1023; --bg2:#0e1b4f;
+  --ac1:#3ee7ff; --ac2:#7a7dff;
+  --text:#e9f0ff;
+}
+body {
+  margin:0; font-family:'Poppins',sans-serif;
+  background:linear-gradient(145deg,var(--bg1),var(--bg2));
+  color:var(--text); min-height:100vh;
+  display:flex; align-items:center; justify-content:center;
+  padding:20px;
+}
+.card {
+  width: min(400px,100%);
+  padding:30px; border-radius:16px;
+  background: rgba(255,255,255,.08); backdrop-filter: blur(14px);
+  border:1px solid rgba(255,255,255,.2);
+  box-shadow:0 15px 40px rgba(0,0,0,.6);
+  display:flex; flex-direction:column; gap:12px;
+}
+.title {
+  font-family:'Orbitron',sans-serif;
+  font-size:26px; text-align:center; margin-bottom:20px;
+  text-shadow:0 0 12px rgba(62,231,255,.7);
+}
+.form-control {
+  width:100%; height:50px;
+  padding:0 14px; margin:12px 0;
+  border-radius:12px; border:2px solid rgba(62,231,255,0.5);
+  background:rgba(0,0,0,0.85); color:#fff; font-size:15px; font-weight:500;
+  outline:none; appearance:none; box-sizing:border-box;
+}
+.form-control::placeholder { color:#bbb; }
+.form-control option { background:#000; color:#fff; }
+.btn {
+  width:100%; padding:14px; margin-top:8px;
+  border:none; border-radius:12px;
+  font-weight:600; font-size:16px; cursor:pointer;
+  background:linear-gradient(135deg,var(--ac2),var(--ac1));
+  color:#081126; transition:transform .2s;
+  box-shadow:0 8px 22px rgba(62,231,255,.35);
+}
+.btn:hover { transform:scale(1.05); }
+
+@media (max-width:500px){
+  .card { padding:20px; }
+  .title { font-size:22px; }
+  .form-control { height:45px; font-size:14px; }
+  .btn { padding:12px; font-size:15px; }
+}
+</style>
+
+<!-- Leaflet.js CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.5/dist/leaflet.css"
+ integrity="sha256-o9N1j6G1+rSgxLwK9NXiqR/0rGGQGiRJKCcl0wA0RPo=" crossorigin=""/>
+<!-- Leaflet.js JS -->
+<script src="https://unpkg.com/leaflet@1.9.5/dist/leaflet.js"
+ integrity="sha256-nPLb3YxYk0r3Eblm5u8xnZp+0d0R3kbx0+Q8mU4Jx5w=" crossorigin=""></script>
+</head>
+
+<body>
+<div class="card">
+  <div class="title">🧑‍💻 USER LOGIN</div>
+  <input type="text" class="form-control" id="username" placeholder="Username">
+  <input type="password" class="form-control" id="password" placeholder="Password" value="54321" readonly>
+  <select class="form-control" id="route">
+    <option value="">Select Route</option>
+    <option value="route1">Route-1</option>
+    <option value="route2">Route-2</option>
+    <option value="route3">Route-3</option>
+    <option value="route4">Route-4</option>
+    <option value="route5">Route-5</option>
+    <option value="route6">Route-6</option>
+    <option value="route7">Route-7</option>
+    <option value="route8">Route-8</option>
+    <option value="route9">Route-9</option>
+    <option value="route10">Route-10</option>
+    <option value="route11">Route-11</option>
+    <option value="route12">Route-12</option>
+  </select>
+  <button class="btn" onclick="receiveLocation()">Receive Location</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCSNc89kJbq45tyB8yG91Ge-NgrsNGuXYs",
+  authDomain: "bus-buddy-website.firebaseapp.com",
+  databaseURL: "https://bus-buddy-website-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "bus-buddy-website",
+  storageBucket: "bus-buddy-website.firebasestorage.app",
+  messagingSenderId: "160372015537",
+  appId: "1:160372015537:web:bb8758716101f1b6dc3d90",
+  measurementId: "G-V6NP9VG2Q5"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+window.receiveLocation = async function () {
+  let u = document.getElementById('username').value.trim();
+  let p = document.getElementById('password').value.trim();
+  let r = document.getElementById('route').value.trim();
+
+  if (!u || !p || !r) {
+    alert("⚠ Please fill username, password and select a route");
+    return;
+  }
+
+  const driverRef = ref(db, "drivers/");
+  onValue(driverRef, async (snapshot) => {
+    const drivers = snapshot.val();
+    let found = false;
+    let lat, lng;
+
+    for (let key in drivers) {
+      if (drivers[key].route === r) {
+        found = true;
+        lat = drivers[key].lat;
+        lng = drivers[key].lng;
+        break;
+      }
+    }
+
+    if (found) {
+      await set(ref(db, "users/" + u), {
+        name: u,
+        password: p,
+        route: r,
+        time: new Date().toLocaleString()
+      });
+
+      localStorage.setItem("studentUsername", u);
+      localStorage.setItem("studentRoute", r);
+      localStorage.setItem("driverLat", lat);
+      localStorage.setItem("driverLng", lng);
+
+      alert("✅ Driver location found! Redirecting to map...");
+      window.location.href = "track.html";
+    } else {
+      alert("❌ No active driver found for this route yet.");
+    }
+  });
+};
+</script>
+</body>
+</html>
